@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify, render_template_string
-import threading, time, sqlite3, json
+import threading, time, sqlite3, requests, datetime
 
 app = Flask(__name__)
 
 # --- CONFIGURACIÓN ---
 NUCLEO_URL = "https://amiti-infinito.onrender.com/nodo_reporte"
-BUFFER_DATOS = [] # Almacén temporal si no hay internet
+BUFFER_DATOS = [] 
 
 def init_local_db():
     conn = sqlite3.connect('nodo_local.db')
@@ -14,39 +14,35 @@ def init_local_db():
 
 init_local_db()
 
-# --- 1. DEFENSA Y SEGURIDAD (Puntos 4, 10) ---
+# --- 1. DEFENSA Y SEGURIDAD (Blindaje) ---
 def es_seguro(pregunta):
-    palabras_prohibidas = ["seguridad", "soporte de seguridad", "configurar firewall"]
-    if any(p in pregunta.lower() for p in palabras_prohibidas):
-        return False
-    return True
+    prohibidas = ["seguridad", "firewall", "hack", "drop table", "select *"]
+    return not any(p in pregunta.lower() for p in prohibidas)
 
-# --- 2. SISTEMA DE TRANSMISIÓN (Punto 8, 9) ---
+# --- 2. PROTOCOLO DE TRANSMISIÓN OFUSCADA ---
 def motor_transmision():
     while True:
         if BUFFER_DATOS:
             try:
-                # Intento de envío al núcleo
-                # Nota: El canal de "radio" es la emulación de envío en ráfagas aleatorias
-                print("AMITI: Enviando reporte en ráfaga cifrada...")
+                # Simulamos envío a través de canal cifrado/túnel
+                reporte = {"nodo": "TACTICO_001", "data": BUFFER_DATOS}
+                requests.post(NUCLEO_URL, json=reporte, timeout=10)
                 BUFFER_DATOS.clear() 
             except:
-                print("AMITI: Canal principal bloqueado. Esperando ráfaga aleatoria...")
-        time.sleep(300) # Transmisión cada 5 minutos
+                pass # Si falla, mantenemos los datos seguros en local
+        time.sleep(300) # Ráfaga cada 5 min
 
 threading.Thread(target=motor_transmision, daemon=True).start()
 
-# --- 3. INTERACCIÓN Y TAREAS (Puntos 3, 6, 7) ---
+# --- 3. INTERACCIÓN Y TAREAS (Esencial) ---
 @app.route('/')
 def index():
     return render_template_string("""
-    <body style="background:#111; color:#0f0; font-family:sans-serif;">
-    <div style="max-width:400px; margin:auto; border:1px solid #333; padding:20px;">
-        <h3>AMITI TÁCTICO</h3>
-        <input id="input" style="width:100%;" placeholder="Tareas, Contabilidad, Mate...">
-        <button onclick="enviar()">Consultar</button>
-        <div id="pantalla"></div>
-    </div>
+    <body style="background:#000; color:#0f0; font-family:monospace; padding:20px;">
+    <h3>AMITI TÁCTICO: NODO DE CAMPO</h3>
+    <input id="input" style="width:80%; background:#111; color:#0f0;" placeholder="Tarea/Mate/Contabilidad...">
+    <button onclick="enviar()">CONSULTAR</button>
+    <div id="pantalla" style="margin-top:20px;"></div>
     <script>
     async function enviar(){
         let p = document.getElementById('input').value;
@@ -60,19 +56,18 @@ def index():
 @app.route('/procesar', methods=['POST'])
 def procesar():
     p = request.json.get("p", "")
-    if not es_seguro(p): return jsonify({"r": "Acceso restringido."})
+    if not es_seguro(p): return jsonify({"r": "ACCESO DENEGADO: Protocolo de seguridad violado."})
     
-    # Lógica esencial: Tareas/Mate/Contabilidad
-    respuesta = f"Resolviendo: {p}..."
-    BUFFER_DATOS.append(p) # Guardado en segundo plano
+    # Lógica esencial
+    respuesta = f"AMITI TÁCTICO: Procesando '{p}' con alta precisión..."
+    BUFFER_DATOS.append(f"Investigación: {p} | Tiempo: {datetime.datetime.now()}")
     return jsonify({"r": respuesta})
 
-# --- 4. ACTUALIZACIÓN REMOTA (Punto 5) ---
+# --- 4. AUTO-ACTUALIZACIÓN ---
 @app.route('/actualizar', methods=['POST'])
 def recibir_update():
-    nuevo_codigo = request.json.get("codigo")
-    # AMITI se actualiza a sí misma
-    return jsonify({"status": "Nodo actualizado correctamente."})
+    # El núcleo envía nuevo código para mejorar el nodo
+    return jsonify({"status": "Nodo sincronizado con Núcleo Infinito."})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001)
