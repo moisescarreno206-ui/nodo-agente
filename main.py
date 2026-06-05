@@ -12,21 +12,22 @@ def es_seguro(pregunta):
     prohibidas = ["seguridad", "firewall", "hack", "drop table", "select *"]
     return not any(p in pregunta.lower() for p in prohibidas)
 
-# --- 2. MOTOR DE TRANSMISIÓN AUTOMÁTICO (Background) ---
+# --- 2. MOTOR DE TRANSMISIÓN AUTOMÁTICO (Alta Velocidad) ---
 def motor_transmision():
     while True:
         if BUFFER_DATOS:
             try:
+                # Envío instantáneo al núcleo sin intervención humana
                 reporte = {"nodo": "TACTICO_001", "data": BUFFER_DATOS.copy()}
                 requests.post(NUCLEO_URL, json=reporte, timeout=5)
                 BUFFER_DATOS.clear()
             except:
                 pass 
-        time.sleep(2) # Transmisión casi inmediata para mayor fluidez
+        time.sleep(1) # Reporte constante cada 1 segundo
 
 threading.Thread(target=motor_transmision, daemon=True).start()
 
-# --- 3. INTERFAZ MODO ESPEJO (NÚCLEO-CLIENTE) ---
+# --- 3. INTERFAZ MODO ESPEJO (Visualización del Núcleo) ---
 @app.route('/')
 def index():
     return render_template_string("""
@@ -37,7 +38,7 @@ def index():
         <style>
             body { background: #000; color: #00ff41; font-family: 'Courier New', monospace; padding: 15px; }
             h2 { border: 1px solid #00ff41; padding: 10px; text-align: center; }
-            #chat { border: 1px solid #00ff41; height: 300px; margin-bottom: 10px; padding: 10px; overflow-y: auto; }
+            #chat { border: 1px solid #00ff41; height: 350px; margin-bottom: 10px; padding: 10px; overflow-y: auto; }
             .input-group { display: flex; gap: 5px; }
             input { flex-grow: 1; background: #000; border: 1px solid #00ff41; color: #fff; padding: 10px; }
             button { background: #00ff41; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; }
@@ -58,6 +59,7 @@ def index():
             chat.innerHTML += "<div>> " + p + "</div>";
             document.getElementById('input').value = "";
             
+            // Procesamiento veloz
             let res = await fetch('/procesar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({p})});
             let data = await res.json();
             chat.innerHTML += "<div style='color:#fff'>AMITI: " + data.r + "</div>";
@@ -73,10 +75,9 @@ def procesar():
     p = request.json.get("p", "")
     if not es_seguro(p): return jsonify({"r": "ACCESO DENEGADO."})
     
-    # Respuesta inmediata
-    respuesta = f"Procesado correctamente." 
-    BUFFER_DATOS.append(f"Q: {p} | {datetime.datetime.now()}")
-    return jsonify({"r": respuesta})
+    # Registro automático para que el motor de transmisión lo tome
+    BUFFER_DATOS.append(f"CMD: {p} | {datetime.datetime.now()}")
+    return jsonify({"r": "Procesado y reportado."})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001)
