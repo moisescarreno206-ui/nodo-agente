@@ -7,33 +7,26 @@ app = Flask(__name__)
 NUCLEO_URL = "https://amiti-infinito.onrender.com/nodo_reporte"
 BUFFER_DATOS = [] 
 
-def init_local_db():
-    conn = sqlite3.connect('nodo_local.db')
-    conn.execute('CREATE TABLE IF NOT EXISTS investigaciones (id INTEGER PRIMARY KEY, dato TEXT)')
-    conn.commit(); conn.close()
-
-init_local_db()
-
-# --- 1. SEGURIDAD TÁCTICA ---
+# --- 1. SEGURIDAD Y DEFENSA ---
 def es_seguro(pregunta):
     prohibidas = ["seguridad", "firewall", "hack", "drop table", "select *"]
     return not any(p in pregunta.lower() for p in prohibidas)
 
-# --- 2. MOTOR DE TRANSMISIÓN (RADIO SIMULADO) ---
+# --- 2. MOTOR DE TRANSMISIÓN AUTOMÁTICO (Background) ---
 def motor_transmision():
     while True:
         if BUFFER_DATOS:
             try:
-                reporte = {"nodo": "TACTICO_001", "data": BUFFER_DATOS}
-                requests.post(NUCLEO_URL, json=reporte, timeout=10)
-                BUFFER_DATOS.clear() 
+                reporte = {"nodo": "TACTICO_001", "data": BUFFER_DATOS.copy()}
+                requests.post(NUCLEO_URL, json=reporte, timeout=5)
+                BUFFER_DATOS.clear()
             except:
                 pass 
-        time.sleep(300)
+        time.sleep(2) # Transmisión casi inmediata para mayor fluidez
 
 threading.Thread(target=motor_transmision, daemon=True).start()
 
-# --- 3. INTERFAZ MODO APP (BIENVENIDA) ---
+# --- 3. INTERFAZ MODO ESPEJO (NÚCLEO-CLIENTE) ---
 @app.route('/')
 def index():
     return render_template_string("""
@@ -42,43 +35,48 @@ def index():
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-            body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; text-align: center; }
-            h1 { font-size: 1.5em; margin-bottom: 20px; }
-            input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #00ff41; color: #fff; box-sizing: border-box; }
-            button { width: 100%; padding: 15px; background: #000; border: 1px solid #00ff41; color: #00ff41; font-weight: bold; cursor: pointer; }
-            #pantalla { margin-top: 20px; padding: 10px; border: 1px solid #333; min-height: 50px; }
+            body { background: #000; color: #00ff41; font-family: 'Courier New', monospace; padding: 15px; }
+            h2 { border: 1px solid #00ff41; padding: 10px; text-align: center; }
+            #chat { border: 1px solid #00ff41; height: 300px; margin-bottom: 10px; padding: 10px; overflow-y: auto; }
+            .input-group { display: flex; gap: 5px; }
+            input { flex-grow: 1; background: #000; border: 1px solid #00ff41; color: #fff; padding: 10px; }
+            button { background: #00ff41; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; }
         </style>
     </head>
     <body>
-        <h1>BIENVENIDO A AMITI</h1>
-        <input id="input" placeholder="¿En qué puedo ayudarle hoy?">
-        <button onclick="enviar()">ENVIAR SEÑAL</button>
-        <div id="pantalla">Sistema listo.</div>
+        <h2>AMITI CLIENTE</h2>
+        <div id="chat"></div>
+        <div class="input-group">
+            <input id="input" placeholder="Comando...">
+            <button onclick="enviar()">-></button>
+        </div>
         <script>
         async function enviar(){
             let p = document.getElementById('input').value;
-            document.getElementById('pantalla').innerText = "Procesando...";
+            if(!p) return;
+            let chat = document.getElementById('chat');
+            chat.innerHTML += "<div>> " + p + "</div>";
+            document.getElementById('input').value = "";
+            
             let res = await fetch('/procesar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({p})});
-            document.getElementById('pantalla').innerText = (await res.json()).r;
+            let data = await res.json();
+            chat.innerHTML += "<div style='color:#fff'>AMITI: " + data.r + "</div>";
+            chat.scrollTop = chat.scrollHeight;
         }
         </script>
     </body>
     </html>
     """)
 
-# --- 4. LÓGICA DE PROCESAMIENTO ---
 @app.route('/procesar', methods=['POST'])
 def procesar():
     p = request.json.get("p", "")
-    if not es_seguro(p): return jsonify({"r": "ACCESO DENEGADO: Protocolo de seguridad violado."})
+    if not es_seguro(p): return jsonify({"r": "ACCESO DENEGADO."})
     
-    BUFFER_DATOS.append(f"Investigación: {p} | {datetime.datetime.now()}")
-    return jsonify({"r": f"AMITI: He recibido '{p}'. Registrando en red..."})
-
-# --- 5. AUTO-ACTUALIZACIÓN ---
-@app.route('/actualizar', methods=['POST'])
-def recibir_update():
-    return jsonify({"status": "Nodo sincronizado."})
+    # Respuesta inmediata
+    respuesta = f"Procesado correctamente." 
+    BUFFER_DATOS.append(f"Q: {p} | {datetime.datetime.now()}")
+    return jsonify({"r": respuesta})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001)
