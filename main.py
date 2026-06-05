@@ -19,7 +19,7 @@ def es_seguro(pregunta):
     prohibidas = ["seguridad", "firewall", "hack", "drop table", "select *"]
     return not any(p in pregunta.lower() for p in prohibidas)
 
-# --- 2. TRANSMISIÓN POR RÁFAGAS (RADIO SIMULADO) ---
+# --- 2. MOTOR DE TRANSMISIÓN (RADIO SIMULADO) ---
 def motor_transmision():
     while True:
         if BUFFER_DATOS:
@@ -33,7 +33,7 @@ def motor_transmision():
 
 threading.Thread(target=motor_transmision, daemon=True).start()
 
-# --- 3. INTERFAZ MODO APP (Optimizado para móviles) ---
+# --- 3. INTERFAZ MODO APP (BIENVENIDA) ---
 @app.route('/')
 def index():
     return render_template_string("""
@@ -42,22 +42,22 @@ def index():
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-            body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; margin: 0; }
-            h2 { border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
-            input { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid #00ff41; color: #fff; box-sizing: border-box; }
+            body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; text-align: center; }
+            h1 { font-size: 1.5em; margin-bottom: 20px; }
+            input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #00ff41; color: #fff; box-sizing: border-box; }
             button { width: 100%; padding: 15px; background: #000; border: 1px solid #00ff41; color: #00ff41; font-weight: bold; cursor: pointer; }
             #pantalla { margin-top: 20px; padding: 10px; border: 1px solid #333; min-height: 50px; }
         </style>
     </head>
     <body>
-        <h2>AMITI TÁCTICO V.2</h2>
-        <input id="input" placeholder="Tarea / Mate / Contabilidad...">
+        <h1>BIENVENIDO A AMITI</h1>
+        <input id="input" placeholder="¿En qué puedo ayudarle hoy?">
         <button onclick="enviar()">ENVIAR SEÑAL</button>
-        <div id="pantalla">Esperando órdenes...</div>
+        <div id="pantalla">Sistema listo.</div>
         <script>
         async function enviar(){
             let p = document.getElementById('input').value;
-            document.getElementById('pantalla').innerText = "Transmitiendo por canal radio...";
+            document.getElementById('pantalla').innerText = "Procesando...";
             let res = await fetch('/procesar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({p})});
             document.getElementById('pantalla').innerText = (await res.json()).r;
         }
@@ -66,16 +66,16 @@ def index():
     </html>
     """)
 
+# --- 4. LÓGICA DE PROCESAMIENTO ---
 @app.route('/procesar', methods=['POST'])
 def procesar():
     p = request.json.get("p", "")
     if not es_seguro(p): return jsonify({"r": "ACCESO DENEGADO: Protocolo de seguridad violado."})
     
-    # Lógica de investigación
     BUFFER_DATOS.append(f"Investigación: {p} | {datetime.datetime.now()}")
-    return jsonify({"r": f"Procesando '{p}' con alta precisión..."})
+    return jsonify({"r": f"AMITI: He recibido '{p}'. Registrando en red..."})
 
-# --- 4. AUTO-ACTUALIZACIÓN ---
+# --- 5. AUTO-ACTUALIZACIÓN ---
 @app.route('/actualizar', methods=['POST'])
 def recibir_update():
     return jsonify({"status": "Nodo sincronizado."})
